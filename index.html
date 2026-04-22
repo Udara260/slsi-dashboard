@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SLSI QA Division — Friction Analysis Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --navy:#0D2B4E;--navy2:#1A3F6F;--navy3:#2456A4;
+  --border:#E2E8F0;--bg:#F0F4F8;--surface:#FFFFFF;
+  --text:#1A1A2E;--text2:#4A5568;--text3:#718096;
+  --low-bg:#E8F5E9;--low:#2E7D32;--low-border:#A5D6A7;
+  --med-bg:#FFF3E0;--med:#E65100;--med-border:#FFCC80;
+  --high-bg:#FFEBEE;--high:#C62828;--high-border:#EF9A9A;
+  --fa-bg:#B71C1C;--fa:#FFFFFF;
+  --fb-bg:#E64A19;--fb:#FFFFFF;
+  --fc-bg:#F9A825;--fc:#7B3F00;
+  --fd-bg:#C8E6C9;--fd:#1B5E20;
+  --fe-bg:#E3F2FD;--fe:#0D47A1;
+  --font:'IBM Plex Sans',sans-serif;
+  --mono:'IBM Plex Mono',monospace;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 60%,var(--navy3) 100%);padding:0;box-shadow:0 2px 12px rgba(0,0,0,0.3)}
+.header-inner{max-width:1600px;margin:0 auto;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.header-left{display:flex;align-items:center;gap:14px}
+.logo{width:46px;height:46px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-txt{font-size:10px;font-weight:700;color:var(--navy);line-height:1.2;text-align:center}
+.header-title h1{font-size:18px;font-weight:600;color:#fff;letter-spacing:.01em}
+.header-title p{font-size:12px;color:rgba(255,255,255,.65);margin-top:2px}
+.header-right{text-align:right;font-size:11px;color:rgba(255,255,255,.5);flex-shrink:0}
+#record-count{font-weight:600;color:rgba(255,255,255,.85)}
+
+/* LAYOUT */
+.layout{max-width:1600px;margin:0 auto;padding:20px 24px;display:grid;grid-template-columns:240px 1fr;gap:20px;align-items:start}
+
+/* SIDEBAR */
+.sidebar{display:flex;flex-direction:column;gap:14px;position:sticky;top:16px}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.panel-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.panel-title::before{content:'';display:block;width:3px;height:14px;background:var(--navy3);border-radius:2px}
+
+/* CATEGORY CHECKBOXES */
+.cat-item{display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;border-radius:5px;transition:background .15s}
+.cat-item:hover{background:#F8FAFC;padding-left:4px}
+.cat-item input[type=checkbox]{width:15px;height:15px;accent-color:var(--navy3);cursor:pointer;flex-shrink:0}
+.cat-label{font-size:13px;color:var(--text);cursor:pointer;line-height:1.3}
+.cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* SEARCH INPUTS */
+.search-wrap{position:relative;margin-bottom:8px}
+.search-wrap:last-child{margin-bottom:0}
+.search-wrap label{font-size:11px;font-weight:500;color:var(--text2);display:block;margin-bottom:5px}
+.search-input{width:100%;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:var(--font);color:var(--text);background:var(--bg);outline:none;transition:border-color .15s}
+.search-input:focus{border-color:var(--navy3);background:#fff}
+.search-input::placeholder{color:var(--text3)}
+.clear-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:2px;line-height:1;margin-top:8px}
+.clear-btn:hover{color:var(--high)}
+
+/* KPI CARDS */
+.kpi-row{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:4px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;position:relative;overflow:hidden}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kpi-accent,var(--navy3))}
+.kpi-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:5px}
+.kpi-val{font-size:28px;font-weight:600;color:var(--text);font-family:var(--mono);line-height:1}
+.kpi-sub{font-size:10px;color:var(--text3);margin-top:3px}
+
+/* RESET BTN */
+.reset-btn{width:100%;background:var(--navy);color:#fff;border:none;border-radius:6px;padding:8px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);transition:background .15s}
+.reset-btn:hover{background:var(--navy2)}
+
+/* MAIN CONTENT */
+.main-content{display:flex;flex-direction:column;gap:18px;min-width:0}
+
+/* FRICTION LEGEND */
+.legend-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px}
+.legend-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:10px}
+.legend-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.legend-item{border-radius:7px;padding:8px 10px;text-align:center}
+.legend-code{font-size:18px;font-weight:700;font-family:var(--mono);line-height:1;margin-bottom:4px}
+.legend-desc{font-size:10px;line-height:1.3}
+.leg-a{background:var(--fa-bg);color:var(--fa)}
+.leg-b{background:var(--fb-bg);color:var(--fb)}
+.leg-c{background:var(--fc-bg);color:var(--fc)}
+.leg-d{background:var(--fd-bg);color:var(--fd)}
+.leg-e{background:var(--fe-bg);color:var(--fe)}
+
+/* CHARTS ROW */
+.charts-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.chart-card.wide{grid-column:span 2}
+.chart-top{margin-bottom:10px}
+.chart-name{font-size:12px;font-weight:600;color:var(--text)}
+.chart-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.chart-wrap{position:relative}
+
+/* MATRIX */
+.matrix-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px}
+.matrix-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.matrix-title{font-size:13px;font-weight:600;color:var(--text)}
+.matrix-meta{font-size:12px;color:var(--text3)}
+.table-wrap{overflow-x:auto;border-radius:6px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:600px}
+th{background:#1A3F6F;color:#fff;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:9px 12px;text-align:left;white-space:nowrap;position:sticky;top:0}
+th:first-child{border-radius:0}
+td{padding:8px 12px;border-bottom:1px solid #F1F5F9;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#F8FAFC}
+.mono{font-family:var(--mono);font-size:12px}
+.sls-num{font-family:var(--mono);font-weight:500;color:var(--navy3);font-size:13px}
+.cat-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;white-space:nowrap}
+
+/* RISK BADGES */
+.risk{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;text-align:center;min-width:64px;white-space:nowrap}
+.risk-high{background:var(--high-bg);color:var(--high);border:1px solid var(--high-border)}
+.risk-medium{background:var(--med-bg);color:var(--med);border:1px solid var(--med-border)}
+.risk-low{background:var(--low-bg);color:var(--low);border:1px solid var(--low-border)}
+
+/* FRICTION BADGES */
+.fric{display:inline-block;padding:3px 12px;border-radius:12px;font-size:12px;font-weight:700;text-align:center;min-width:36px;font-family:var(--mono)}
+.fric-A{background:var(--fa-bg);color:var(--fa)}
+.fric-B{background:var(--fb-bg);color:var(--fb)}
+.fric-C{background:var(--fc-bg);color:var(--fc)}
+.fric-D{background:var(--fd-bg);color:var(--fd)}
+.fric-E{background:var(--fe-bg);color:var(--fe);border:1px solid #90CAF9}
+
+/* CATEGORY COLOURS */
+.cat-cov{background:#E3F2FD;color:#0D47A1}
+.cat-ncov{background:#FCE4EC;color:#880E4F}
+.cat-mfr{background:#E8F5E9;color:#1B5E20}
+.cat-sls{background:#E8EAF6;color:#283593}
+.cat-soe{background:#EDE7F6;color:#4527A0}
+.cat-trus{background:#E0F2F1;color:#004D40}
+
+/* PAGINATION */
+.pagination{display:flex;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:8px}
+.page-info{font-size:12px;color:var(--text3)}
+.page-btns{display:flex;gap:4px}
+.pbtn{border:1px solid var(--border);background:var(--surface);border-radius:5px;padding:5px 11px;font-size:12px;cursor:pointer;color:var(--text2);font-family:var(--font);transition:all .15s}
+.pbtn:hover{background:var(--bg);border-color:var(--navy3)}
+.pbtn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.pbtn:disabled{opacity:.35;cursor:default}
+
+/* LOADING */
+.loading{display:flex;align-items:center;justify-content:center;height:300px;flex-direction:column;gap:12px}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--navy3);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{color:var(--text3);font-size:14px}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:40px 20px;color:var(--text3)}
+.empty-icon{font-size:36px;margin-bottom:8px}
+
+/* STATS BAR */
+.stats-bar{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 18px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.stat-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
+.stat-dot{width:8px;height:8px;border-radius:50%}
+
+@media(max-width:1100px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{position:static}
+  .charts-row{grid-template-columns:1fr 1fr}
+  .chart-card.wide{grid-column:span 2}
+  .legend-grid{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:680px){
+  .charts-row{grid-template-columns:1fr}
+  .chart-card.wide{grid-column:span 1}
+  .kpi-row{grid-template-columns:repeat(2,1fr)}
+  .legend-grid{grid-template-columns:repeat(2,1fr)}
+  .header-title h1{font-size:15px}
+  .layout{padding:14px}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-inner">
+    <div class="header-left">
+      <div class="logo"><div class="logo-txt">SLS<br>I</div></div>
+      <div class="header-title">
+        <h1>Quality Assurance Division — Friction Analysis Dashboard</h1>
+        <p>Sri Lanka Standards Institution &nbsp;|&nbsp; Compulsory Import Inspection Scheme (CIIS)</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div>Total records: <span id="record-count">—</span></div>
+      <div style="margin-top:3px;font-size:10px">Last updated: April 2026</div>
+    </div>
+  </div>
+</div>
+
+<div class="layout" id="layout">
+  <!-- Loading state -->
+  <div style="grid-column:1/-1">
+    <div class="loading" id="loading-state">
+      <div class="spinner"></div>
+      <div class="loading-txt">Loading dashboard data…</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const CSV_FILE = 'MasterProductList_v2.csv';
+const PER_PAGE = 15;
+
+const CAT_COLORS = {
+  'Covered under Gazette':     {dot:'#1565C0',pill:'cat-cov'},
+  'Not Covered under Gazette': {dot:'#C62828',pill:'cat-ncov'},
+  'Registered Manufacturer':   {dot:'#2E7D32',pill:'cat-mfr'},
+  'SLS Mark Holder':           {dot:'#283593',pill:'cat-sls'},
+  'SOE Product':               {dot:'#4527A0',pill:'cat-soe'},
+  'Trusted Party':             {dot:'#00695C',pill:'cat-trus'},
+};
+
+const FRICTION_LABELS = {
+  A:'All Containers Physical Examination at RCT',
+  B:'Randomly Selected — Others held in Port',
+  C:'Randomly Selected — Others to Warehouse',
+  D:'All Consignments Warehouse Release / Out-Panel',
+  E:'Refer for Random Physical Examination at RCT',
+};
+
+const RISK_CHART_COLORS = {High:'#C62828',Medium:'#E65100',Low:'#2E7D32'};
+const FRIC_CHART_COLORS = {A:'#B71C1C',B:'#E64A19',C:'#F9A825',D:'#4CAF50',E:'#1E88E5'};
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let allData = [];
+let filtered = [];
+let activeCats = new Set();
+let slsFilter = '';
+let hsFilter  = '';
+let page = 1;
+let riskChart, fricChart, catChart;
+
+// ── NORMALISE RISK ────────────────────────────────────────────────────────────
+function normRisk(v){
+  if(!v) return 'Unknown';
+  const s = v.trim().toLowerCase();
+  if(s==='high'||s==='hiigh'||s==='hgih') return 'High';
+  if(s==='medium'||s==='med') return 'Medium';
+  if(s==='low') return 'Low';
+  return v.trim();
+}
+
+// ── LOAD CSV ──────────────────────────────────────────────────────────────────
+Papa.parse(CSV_FILE, {
+  download: true,
+  header: true,
+  skipEmptyLines: true,
+  complete(results) {
+    allData = results.data.map(r => ({
+      hs:       String(r.HS_Code||'').trim(),
+      sls:      String(r.SLS_No||'').trim(),
+      product:  String(r.Product||'').trim(),
+      category: String(r.Category||'').trim(),
+      name:     String(r.Name||'').trim(),
+      risk:     normRisk(r.Risk_Level),
+      friction: String(r.Friction_Level||'').trim().toUpperCase(),
+    }));
+    activeCats = new Set(allData.map(d=>d.category));
+    document.getElementById('record-count').textContent = allData.length;
+    buildUI();
+    applyFilters();
+  },
+  error(err) {
+    document.getElementById('loading-state').innerHTML =
+      '<div class="empty"><div class="empty-icon">⚠</div><div>Could not load CSV file.<br>Make sure <strong>MasterProductList_v2.csv</strong> is in the same folder as index.html.</div></div>';
+  }
+});
+
+// ── BUILD UI ──────────────────────────────────────────────────────────────────
+function buildUI() {
+  const cats = [...new Set(allData.map(d=>d.category))].sort();
+  const layout = document.getElementById('layout');
+  layout.innerHTML = `
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <div class="panel">
+      <div class="panel-title">Category</div>
+      <div id="cat-list">
+        ${cats.map(c=>{
+          const cc = CAT_COLORS[c]||{dot:'#999',pill:''};
+          return `<label class="cat-item">
+            <input type="checkbox" class="cat-cb" value="${c}" checked onchange="onCatChange()">
+            <span class="cat-dot" style="background:${cc.dot}"></span>
+            <span class="cat-label">${c}</span>
+          </label>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Search Filters</div>
+      <div class="search-wrap">
+        <label>SLS No.</label>
+        <input class="search-input" id="sls-input" placeholder="e.g. 734" oninput="onSearchChange()">
+      </div>
+      <div class="search-wrap" style="margin-top:10px">
+        <label>HS Code</label>
+        <input class="search-input" id="hs-input" placeholder="e.g. 853620" oninput="onSearchChange()">
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Summary</div>
+      <div class="kpi-row">
+        <div class="kpi" style="--kpi-accent:#283593">
+          <div class="kpi-label">SLS Mark Holders</div>
+          <div class="kpi-val" id="k-sls">—</div>
+          <div class="kpi-sub">certified holders</div>
+        </div>
+        <div class="kpi" style="--kpi-accent:#1B5E20">
+          <div class="kpi-label">Reg. Manufacturers</div>
+          <div class="kpi-val" id="k-mfr">—</div>
+          <div class="kpi-sub">registered</div>
+        </div>
+        <div class="kpi" style="--kpi-accent:#0D47A1">
+          <div class="kpi-label">Covered Gazette</div>
+          <div class="kpi-val" id="k-cov">—</div>
+          <div class="kpi-sub">gazette items</div>
+        </div>
+        <div class="kpi" style="--kpi-accent:#C62828">
+          <div class="kpi-label">Not Covered</div>
+          <div class="kpi-val" id="k-ncov">—</div>
+          <div class="kpi-sub">outside gazette</div>
+        </div>
+        <div class="kpi" style="--kpi-accent:#C62828;grid-column:1/-1">
+          <div class="kpi-label">High Risk Items</div>
+          <div class="kpi-val" id="k-high">—</div>
+          <div class="kpi-sub">require attention</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="reset-btn" onclick="resetAll()">Reset All Filters</button>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main-content">
+
+    <!-- FRICTION LEGEND -->
+    <div class="legend-card">
+      <div class="legend-title">Friction Level Reference</div>
+      <div class="legend-grid">
+        ${Object.entries(FRICTION_LABELS).map(([k,v])=>`
+          <div class="legend-item leg-${k.toLowerCase()}">
+            <div class="legend-code">${k}</div>
+            <div class="legend-desc">${v}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-top">
+          <div class="chart-name">Risk Level Distribution</div>
+          <div class="chart-sub">High / Medium / Low</div>
+        </div>
+        <div class="chart-wrap" style="height:180px"><canvas id="riskChart" role="img" aria-label="Donut chart of risk levels">Risk level distribution chart.</canvas></div>
+        <div id="risk-legend" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:11px;color:var(--text2)"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-top">
+          <div class="chart-name">Friction Level Distribution</div>
+          <div class="chart-sub">Levels A through E</div>
+        </div>
+        <div class="chart-wrap" style="height:180px"><canvas id="fricChart" role="img" aria-label="Donut chart of friction levels">Friction level distribution chart.</canvas></div>
+        <div id="fric-legend" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:11px;color:var(--text2)"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-top">
+          <div class="chart-name">Products by Category</div>
+          <div class="chart-sub">Total count per category</div>
+        </div>
+        <div class="chart-wrap" style="height:210px"><canvas id="catChart" role="img" aria-label="Bar chart products by category">Products per category chart.</canvas></div>
+      </div>
+    </div>
+
+    <!-- STATS BAR -->
+    <div class="stats-bar" id="stats-bar"></div>
+
+    <!-- MATRIX -->
+    <div class="matrix-card">
+      <div class="matrix-header">
+        <div class="matrix-title">Product Details Matrix</div>
+        <div class="matrix-meta" id="matrix-meta">Loading…</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>SLS No.</th>
+              <th>HS Code</th>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Name / Entity</th>
+              <th>Risk Level</th>
+              <th>Friction Level</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <div class="page-info" id="page-info"></div>
+        <div class="page-btns" id="page-btns"></div>
+      </div>
+    </div>
+
+  </div>`;
+
+  initCharts();
+}
+
+// ── FILTER LOGIC ─────────────────────────────────────────────────────────────
+function applyFilters() {
+  const sls = document.getElementById('sls-input')?.value.trim().toLowerCase()||'';
+  const hs  = document.getElementById('hs-input')?.value.trim().toLowerCase()||'';
+
+  filtered = allData.filter(d => {
+    if(!activeCats.has(d.category)) return false;
+    if(sls && !d.sls.toLowerCase().includes(sls)) return false;
+    if(hs  && !d.hs.toLowerCase().includes(hs))  return false;
+    return true;
+  });
+
+  page = 1;
+  updateKPIs();
+  updateCharts();
+  renderTable();
+  updateStatsBar();
+  document.getElementById('record-count').textContent = filtered.length + ' / ' + allData.length;
+}
+
+function onCatChange() {
+  activeCats = new Set();
+  document.querySelectorAll('.cat-cb:checked').forEach(cb => activeCats.add(cb.value));
+  applyFilters();
+}
+
+function onSearchChange() { applyFilters(); }
+
+function resetAll() {
+  document.querySelectorAll('.cat-cb').forEach(cb => cb.checked = true);
+  activeCats = new Set(allData.map(d=>d.category));
+  document.getElementById('sls-input').value = '';
+  document.getElementById('hs-input').value  = '';
+  applyFilters();
+}
+
+// ── KPIs ──────────────────────────────────────────────────────────────────────
+function updateKPIs() {
+  const f = filtered;
+  document.getElementById('k-sls').textContent  = f.filter(d=>d.category==='SLS Mark Holder').length;
+  document.getElementById('k-mfr').textContent  = f.filter(d=>d.category==='Registered Manufacturer').length;
+  document.getElementById('k-cov').textContent  = f.filter(d=>d.category==='Covered under Gazette').length;
+  document.getElementById('k-ncov').textContent = f.filter(d=>d.category==='Not Covered under Gazette').length;
+  document.getElementById('k-high').textContent = f.filter(d=>d.risk==='High').length;
+}
+
+// ── STATS BAR ─────────────────────────────────────────────────────────────────
+function updateStatsBar() {
+  const counts = {};
+  filtered.forEach(d => counts[d.risk] = (counts[d.risk]||0)+1);
+  const sb = document.getElementById('stats-bar');
+  if(!sb) return;
+  sb.innerHTML = `
+    <span style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Filtered results:</span>
+    ${Object.entries(counts).map(([k,v])=>`
+      <span class="stat-item">
+        <span class="stat-dot" style="background:${RISK_CHART_COLORS[k]||'#999'}"></span>
+        ${k}: <strong>${v}</strong>
+      </span>`).join('')}
+    <span class="stat-item" style="margin-left:auto">
+      Total shown: <strong>${filtered.length}</strong>
+    </span>`;
+}
+
+// ── CHARTS ────────────────────────────────────────────────────────────────────
+function initCharts() {
+  riskChart = new Chart(document.getElementById('riskChart'), {
+    type:'doughnut',
+    data:{labels:[],datasets:[{data:[],backgroundColor:[],borderWidth:0,hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false}},layout:{padding:5}}
+  });
+  fricChart = new Chart(document.getElementById('fricChart'), {
+    type:'doughnut',
+    data:{labels:[],datasets:[{data:[],backgroundColor:[],borderWidth:0,hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false}},layout:{padding:5}}
+  });
+
+  const cats = [...new Set(allData.map(d=>d.category))];
+  catChart = new Chart(document.getElementById('catChart'), {
+    type:'bar',
+    data:{
+      labels: cats.map(c=>c.replace(' under Gazette','').replace(' Manufacturer','Mfr')),
+      datasets:[{data:cats.map(()=>0),backgroundColor:cats.map(c=>(CAT_COLORS[c]||{dot:'#999'}).dot),borderRadius:4}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      indexAxis:'y',
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{font:{size:10},color:'#718096'},grid:{color:'rgba(0,0,0,0.04)'}},
+        y:{ticks:{font:{size:10},color:'#4A5568'}},
+      }
+    }
+  });
+}
+
+function updateCharts() {
+  if(!riskChart) return;
+
+  // Risk donut
+  const riskCounts = {};
+  filtered.forEach(d => riskCounts[d.risk] = (riskCounts[d.risk]||0)+1);
+  const riskKeys = Object.keys(riskCounts);
+  riskChart.data.labels = riskKeys;
+  riskChart.data.datasets[0].data = riskKeys.map(k=>riskCounts[k]);
+  riskChart.data.datasets[0].backgroundColor = riskKeys.map(k=>RISK_CHART_COLORS[k]||'#999');
+  riskChart.update();
+  const rl = document.getElementById('risk-legend');
+  if(rl) rl.innerHTML = riskKeys.map(k=>`
+    <span style="display:flex;align-items:center;gap:4px">
+      <span style="width:9px;height:9px;border-radius:2px;background:${RISK_CHART_COLORS[k]||'#999'};flex-shrink:0"></span>
+      ${k}: ${riskCounts[k]}
+    </span>`).join('');
+
+  // Friction donut
+  const fricCounts = {};
+  filtered.forEach(d => fricCounts[d.friction] = (fricCounts[d.friction]||0)+1);
+  const fricKeys = Object.keys(fricCounts).sort();
+  fricChart.data.labels = fricKeys;
+  fricChart.data.datasets[0].data = fricKeys.map(k=>fricCounts[k]);
+  fricChart.data.datasets[0].backgroundColor = fricKeys.map(k=>FRIC_CHART_COLORS[k]||'#999');
+  fricChart.update();
+  const fl = document.getElementById('fric-legend');
+  if(fl) fl.innerHTML = fricKeys.map(k=>`
+    <span style="display:flex;align-items:center;gap:4px">
+      <span style="width:9px;height:9px;border-radius:2px;background:${FRIC_CHART_COLORS[k]||'#999'};flex-shrink:0"></span>
+      ${k}: ${fricCounts[k]}
+    </span>`).join('');
+
+  // Category bar
+  const cats = [...new Set(allData.map(d=>d.category))];
+  catChart.data.datasets[0].data = cats.map(c=>filtered.filter(d=>d.category===c).length);
+  catChart.update();
+}
+
+// ── TABLE ─────────────────────────────────────────────────────────────────────
+function riskBadge(r) {
+  if(r==='High')   return `<span class="risk risk-high">High</span>`;
+  if(r==='Medium') return `<span class="risk risk-medium">Medium</span>`;
+  if(r==='Low')    return `<span class="risk risk-low">Low</span>`;
+  return `<span class="risk">${r}</span>`;
+}
+function fricBadge(f) {
+  const cls = ['A','B','C','D','E'].includes(f) ? `fric-${f}` : '';
+  return `<span class="fric ${cls}">${f}</span>`;
+}
+function catPill(c) {
+  const cc = CAT_COLORS[c];
+  if(cc) return `<span class="cat-pill ${cc.pill}">${c}</span>`;
+  return `<span class="cat-pill" style="background:#EEE;color:#555">${c}</span>`;
+}
+
+function renderTable() {
+  const total = filtered.length;
+  const start = (page-1)*PER_PAGE;
+  const end   = Math.min(start+PER_PAGE, total);
+  const slice = filtered.slice(start, end);
+
+  const tbody = document.getElementById('table-body');
+  const meta  = document.getElementById('matrix-meta');
+  if(!tbody) return;
+
+  if(total===0) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="empty-icon">🔍</div><div>No records match your filters</div></div></td></tr>`;
+    meta.textContent = '0 records';
+  } else {
+    tbody.innerHTML = slice.map(d=>`
+      <tr>
+        <td class="sls-num">${d.sls||'—'}</td>
+        <td class="mono">${d.hs||'—'}</td>
+        <td>${d.product||'—'}</td>
+        <td>${catPill(d.category)}</td>
+        <td style="color:var(--text2)">${d.name&&d.name!=='nan'?d.name:'<span style="color:var(--text3)">N/A</span>'}</td>
+        <td>${riskBadge(d.risk)}</td>
+        <td>${fricBadge(d.friction)}</td>
+      </tr>`).join('');
+    meta.textContent = `Showing ${start+1}–${end} of ${total}`;
+  }
+
+  const pi = document.getElementById('page-info');
+  const pb = document.getElementById('page-btns');
+  if(pi) pi.textContent = total===0?'No records':`${start+1}–${end} of ${total} records`;
+  renderPageBtns(total, pb);
+}
+
+function renderPageBtns(total, container) {
+  if(!container) return;
+  const pages = Math.ceil(total/PER_PAGE);
+  let html = `<button class="pbtn" onclick="goPage(${page-1})" ${page===1?'disabled':''}>&#8592;</button>`;
+  const maxShow = 5;
+  let s = Math.max(1, page - Math.floor(maxShow/2));
+  let e = Math.min(pages, s + maxShow - 1);
+  if(e-s < maxShow-1) s = Math.max(1, e-maxShow+1);
+  if(s>1) html += `<button class="pbtn" onclick="goPage(1)">1</button>${s>2?'<span style="padding:0 4px;color:var(--text3)">…</span>':''}`;
+  for(let i=s;i<=e;i++) html += `<button class="pbtn ${i===page?'active':''}" onclick="goPage(${i})">${i}</button>`;
+  if(e<pages) html += `${e<pages-1?'<span style="padding:0 4px;color:var(--text3)">…</span>':''}<button class="pbtn" onclick="goPage(${pages})">${pages}</button>`;
+  html += `<button class="pbtn" onclick="goPage(${page+1})" ${page>=pages||pages===0?'disabled':''}>&#8594;</button>`;
+  container.innerHTML = html;
+}
+
+function goPage(p) {
+  const pages = Math.ceil(filtered.length/PER_PAGE);
+  if(p<1||p>pages) return;
+  page = p;
+  renderTable();
+  document.querySelector('.matrix-card')?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+</script>
+</body>
+</html>

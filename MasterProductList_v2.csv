@@ -1,0 +1,32 @@
+HS_Code,SLS_No,Product,Category,Name,Risk_Level,Friction_Level
+85366921,734,13A Switch,Covered under Gazette,N/A,High,A
+85041010,1150,Ballasts for Flurescent,Covered under Gazette,N/A,HIgh,B
+853620,1175,MCB,Covered under Gazette,N/A,Medium,C
+853620,1099,RCCB,Covered under Gazette,N/A,Medium,C
+853620,1022,RCBO,Covered under Gazette,N/A,Medium,C
+74081100,695,Conductor,Covered under Gazette,N/A,Medium,C
+85366190,138,Lamps,Covered under Gazette,N/A,Medium,C
+85366191,1571,Lamp holders,Covered under Gazette,N/A,Medium,C
+84145100,814,Fans,Covered under Gazette,N/A,Medium,C
+85161000,1193,Water heaters,Covered under Gazette,N/A,Medium,C
+851640,1476,Iron,Covered under Gazette,N/A,Medium,C
+85166010,1501,Kettles,Covered under Gazette,N/A,Medium,C
+85166090,1495,Hot plates,Covered under Gazette,N/A,Medium,C
+85167920,1501,Rice Cookers,Covered under Gazette,N/A,Medium,C
+85366921,734,13Y Switch,Not Covered under Gazette,N/A,Low,D
+85041010,1150,Mercury bulb,Not Covered under Gazette,N/A,Low,D
+853620,1175,MCCB,Not Covered under Gazette,N/A,Low,D
+85366921,734,13A Switch,Registered Manufacturer,AA Pvt Ltd,Low,D
+85041010,1150,Ballasts for Flurescent,Registered Manufacturer,BB Pvt Ltd,Low,D
+853620,1175,MCB,Registered Manufacturer,CC Pvt Ltd,Low,D
+853620,1099,RCCB,Registered Manufacturer,DD Pvt Ltd,Low,D
+851640,1476,Iron,SLS Mark Holder,Demo Pvt Ltd,Low,D
+85166010,1501,Kettles,SLS Mark Holder,Damro Pvt Ltd,Low,D
+85166090,1495,Hot plates,SLS Mark Holder,Panasonic Sri Lanka,Low,D
+85167920,1501,Rice Cookers,SLS Mark Holder,Abans,Low,D
+853620,1099,RCCB,SOE Product,BOI,Low,E
+853620,1022,RCBO,SOE Product,Water Board,Low,D
+853620,1099,RCCB,Trusted Party,FF,Medium,C
+853620,1022,RCBO,Trusted Party,GG,Medium,C
+74081100,695,Conductor,Trusted Party,HH,Medium,C
+85366190,138,Lamps,Trusted Party,II,Medium,C
