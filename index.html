@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SLSI QA Division — Friction Analysis Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --navy:#0D2B4E;--navy2:#1A3F6F;--navy3:#2456A4;
+  --border:#E2E8F0;--bg:#F0F4F8;--surface:#FFFFFF;
+  --text:#1A1A2E;--text2:#4A5568;--text3:#718096;
+  --low-bg:#E8F5E9;--low:#2E7D32;--low-border:#A5D6A7;
+  --med-bg:#FFF3E0;--med:#E65100;--med-border:#FFCC80;
+  --high-bg:#FFEBEE;--high:#C62828;--high-border:#EF9A9A;
+  --fa-bg:#B71C1C;--fa:#FFFFFF;--fb-bg:#E64A19;--fb:#FFFFFF;
+  --fc-bg:#F9A825;--fc:#7B3F00;--fd-bg:#C8E6C9;--fd:#1B5E20;
+  --fe-bg:#E3F2FD;--fe:#0D47A1;
+  --ff-bg:#F3E5F5;--ff:#4A148C;
+  --font:'IBM Plex Sans',sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+.header{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 60%,var(--navy3) 100%);box-shadow:0 2px 12px rgba(0,0,0,.3)}
+.header-inner{max-width:1600px;margin:0 auto;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.header-left{display:flex;align-items:center;gap:14px}
+.logo{width:46px;height:46px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-txt{font-size:10px;font-weight:700;color:var(--navy);line-height:1.2;text-align:center}
+.header-title h1{font-size:18px;font-weight:600;color:#fff}
+.header-title p{font-size:12px;color:rgba(255,255,255,.65);margin-top:2px}
+.header-right{display:flex;align-items:center;gap:12px}
+.header-meta{text-align:right;font-size:11px;color:rgba(255,255,255,.5)}
+#record-count{font-weight:600;color:rgba(255,255,255,.85)}
+.pdf-btn{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.35);color:#fff;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);transition:all .2s;white-space:nowrap}
+.pdf-btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.7)}
+.pdf-btn:active{transform:scale(.97)}
+.pdf-btn svg{flex-shrink:0}
+.layout{max-width:1600px;margin:0 auto;padding:20px 24px;display:grid;grid-template-columns:240px 1fr;gap:20px;align-items:start}
+.sidebar{display:flex;flex-direction:column;gap:14px;position:sticky;top:16px}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.panel-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.panel-title::before{content:'';display:block;width:3px;height:14px;background:var(--navy3);border-radius:2px}
+.cat-item{display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;border-radius:5px;transition:background .15s}
+.cat-item:hover{background:#F8FAFC;padding-left:4px}
+.cat-item input[type=checkbox]{width:15px;height:15px;accent-color:var(--navy3);cursor:pointer;flex-shrink:0}
+.cat-label{font-size:13px;color:var(--text);cursor:pointer;line-height:1.3}
+.cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.search-wrap{margin-bottom:8px}
+.search-wrap:last-child{margin-bottom:0}
+.search-wrap label{font-size:11px;font-weight:500;color:var(--text2);display:block;margin-bottom:5px}
+.search-input{width:100%;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:var(--font);color:var(--text);background:var(--bg);outline:none;transition:border-color .15s}
+.search-input:focus{border-color:var(--navy3);background:#fff}
+.search-input::placeholder{color:var(--text3)}
+.kpi-row{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;position:relative;overflow:hidden}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kpi-accent,var(--navy3))}
+.kpi-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:5px}
+.kpi-val{font-size:28px;font-weight:600;color:var(--text);font-family:var(--mono);line-height:1}
+.kpi-sub{font-size:10px;color:var(--text3);margin-top:3px}
+.reset-btn{width:100%;background:var(--navy);color:#fff;border:none;border-radius:6px;padding:8px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);transition:background .15s;margin-bottom:6px}
+.reset-btn:hover{background:var(--navy2)}
+.pdf-side-btn{width:100%;background:#1B5E20;color:#fff;border:none;border-radius:6px;padding:9px 8px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);transition:background .15s;display:flex;align-items:center;justify-content:center;gap:6px}
+.pdf-side-btn:hover{background:#2E7D32}
+.main-content{display:flex;flex-direction:column;gap:18px;min-width:0}
+.legend-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px}
+.legend-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:10px}
+.legend-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.legend-item{border-radius:7px;padding:8px 10px;text-align:center}
+.legend-code{font-size:18px;font-weight:700;font-family:var(--mono);line-height:1;margin-bottom:4px}
+.legend-desc{font-size:10px;line-height:1.3}
+.leg-a{background:var(--fa-bg);color:var(--fa)}.leg-b{background:var(--fb-bg);color:var(--fb)}
+.leg-c{background:var(--fc-bg);color:var(--fc)}.leg-d{background:var(--fd-bg);color:var(--fd)}
+.leg-e{background:var(--fe-bg);color:var(--fe)}
+.leg-f{background:var(--ff-bg);color:var(--ff)}
+.charts-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.chart-top{margin-bottom:10px}
+.chart-name{font-size:12px;font-weight:600;color:var(--text)}
+.chart-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.matrix-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px}
+.matrix-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.matrix-title{font-size:13px;font-weight:600;color:var(--text)}
+.matrix-meta{font-size:12px;color:var(--text3)}
+.table-wrap{overflow-x:auto;border-radius:6px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:600px}
+th{background:#1A3F6F;color:#fff;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:9px 12px;text-align:left;white-space:nowrap}
+td{padding:8px 12px;border-bottom:1px solid #F1F5F9;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#F8FAFC}
+.mono{font-family:var(--mono);font-size:12px}
+.sls-num{font-family:var(--mono);font-weight:500;color:var(--navy3);font-size:13px}
+.cat-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;white-space:nowrap}
+.risk{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;text-align:center;min-width:64px;white-space:nowrap}
+.risk-high{background:var(--high-bg);color:var(--high);border:1px solid var(--high-border)}
+.risk-medium{background:var(--med-bg);color:var(--med);border:1px solid var(--med-border)}
+.risk-low{background:var(--low-bg);color:var(--low);border:1px solid var(--low-border)}
+.fric{display:inline-block;padding:3px 12px;border-radius:12px;font-size:12px;font-weight:700;text-align:center;min-width:36px;font-family:var(--mono)}
+.fric-A{background:var(--fa-bg);color:var(--fa)}.fric-B{background:var(--fb-bg);color:var(--fb)}
+.fric-C{background:var(--fc-bg);color:var(--fc)}.fric-D{background:var(--fd-bg);color:var(--fd)}
+.fric-E{background:var(--fe-bg);color:var(--fe);border:1px solid #90CAF9}
+.fric-F{background:var(--ff-bg);color:var(--ff)}
+.cat-cov{background:#E3F2FD;color:#0D47A1}.cat-ncov{background:#FCE4EC;color:#880E4F}
+.cat-mfr{background:#E8F5E9;color:#1B5E20}.cat-sls{background:#E8EAF6;color:#283593}
+.cat-soe{background:#EDE7F6;color:#4527A0}.cat-trus{background:#E0F2F1;color:#004D40}
+.pagination{display:flex;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:8px}
+.page-info{font-size:12px;color:var(--text3)}
+.page-btns{display:flex;gap:4px}
+.pbtn{border:1px solid var(--border);background:var(--surface);border-radius:5px;padding:5px 11px;font-size:12px;cursor:pointer;color:var(--text2);font-family:var(--font);transition:all .15s}
+.pbtn:hover{background:var(--bg);border-color:var(--navy3)}
+.pbtn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.pbtn:disabled{opacity:.35;cursor:default}
+.loading{display:flex;align-items:center;justify-content:center;height:300px;flex-direction:column;gap:12px}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--navy3);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{color:var(--text3);font-size:14px}
+.empty{text-align:center;padding:40px 20px;color:var(--text3)}
+.empty-icon{font-size:36px;margin-bottom:8px}
+.stats-bar{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 18px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.stat-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
+.stat-dot{width:8px;height:8px;border-radius:50%}
+/* PDF overlay */
+.pdf-overlay{display:none;position:fixed;inset:0;background:rgba(13,43,78,.7);z-index:9999;align-items:center;justify-content:center}
+.pdf-overlay.show{display:flex}
+.pdf-modal{background:#fff;border-radius:14px;padding:36px 44px;text-align:center;min-width:300px;box-shadow:0 24px 64px rgba(0,0,0,.3)}
+.pdf-modal-icon{font-size:36px;margin-bottom:12px}
+.pdf-modal h3{font-size:17px;font-weight:600;color:var(--navy);margin-bottom:6px}
+.pdf-modal p{font-size:13px;color:var(--text3);margin-bottom:22px}
+.pdf-progress-track{width:100%;height:7px;background:#E2E8F0;border-radius:4px;overflow:hidden}
+.pdf-progress-fill{height:100%;background:linear-gradient(90deg,var(--navy3),#42A5F5);border-radius:4px;transition:width .35s ease;width:0%}
+.pdf-step{font-size:11px;color:var(--text3);margin-top:9px;height:16px}
+@media(max-width:1100px){.layout{grid-template-columns:1fr}.sidebar{position:static}.charts-row{grid-template-columns:1fr 1fr}.legend-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:680px){.charts-row{grid-template-columns:1fr}.kpi-row{grid-template-columns:repeat(2,1fr)}.legend-grid{grid-template-columns:repeat(2,1fr)}.header-title h1{font-size:14px}.layout{padding:12px}.pdf-btn span{display:none}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="header-left">
+      <div class="logo"><div class="logo-txt">SLS<br>I</div></div>
+      <div class="header-title">
+        <h1>Quality Assurance Division — Friction Analysis Dashboard</h1>
+        <p>Sri Lanka Standards Institution &nbsp;|&nbsp; Compulsory Import Inspection Scheme (CIIS)</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="header-meta">
+        <div>Records: <span id="record-count">—</span></div>
+        <div style="margin-top:2px;font-size:10px">Last updated: April 2026</div>
+      </div>
+      <button class="pdf-btn" onclick="generatePDF()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14,2 14,8 20,8"/>
+          <line x1="12" y1="18" x2="12" y2="12"/>
+          <polyline points="9,15 12,18 15,15"/>
+        </svg>
+        <span>Download PDF Report</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- PDF PROGRESS OVERLAY -->
+<div class="pdf-overlay" id="pdf-overlay">
+  <div class="pdf-modal">
+    <div class="pdf-modal-icon">📄</div>
+    <h3>Generating PDF Report</h3>
+    <p>Preparing your SLSI friction analysis report…</p>
+    <div class="pdf-progress-track"><div class="pdf-progress-fill" id="pdf-bar"></div></div>
+    <div class="pdf-step" id="pdf-step">Initialising…</div>
+  </div>
+</div>
+
+<div class="layout" id="layout">
+  <div style="grid-column:1/-1">
+    <div class="loading" id="loading-state">
+      <div class="spinner"></div>
+      <div class="loading-txt">Loading dashboard data…</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CSV_FILE='MasterProductList_v3.csv', PER_PAGE=15;
+const CAT_COLORS={'Products from SLS Permit holders':{dot:'#1565C0',pill:'cat-sls'},'Products from Registered Manufacturers':{dot:'#2E7D32',pill:'cat-mfr'},'Products with COC':{dot:'#283593',pill:'cat-coc'},'Products with satisfactory past performance':{dot:'#00695C',pill:'cat-sat'},'Products without a COC':{dot:'#C62828',pill:'cat-ncoc'},'Products for Projects':{dot:'#4527A0',pill:'cat-proj'},'Products with TIEP / value added and export oriented':{dot:'#00838F',pill:'cat-tiep'},'Products Not covered under IIS':{dot:'#B71C1C',pill:'cat-niis'}};
+const FRICTION_LABELS={A:'All Containers Physical Examination at RCT',B:'Randomly Selected — Hold Others in Port Until Examination Finalized',C:'Randomly Selected — Allow Warehouse Release to Consignee',D:'Allow All Consignments Warehouse Release / Out-Panel Examination',E:'Refer for Random Physical Examination at RCT',F:'Approved without Random Sampling or Inspection'};
+const RISK_CHART_COLORS={High:'#C62828',Medium:'#E65100',Low:'#2E7D32'};
+const FRIC_CHART_COLORS={A:'#B71C1C',B:'#E64A19',C:'#F9A825',D:'#4CAF50',E:'#1E88E5',F:'#8E24AA'};
+const PDF_RISK={High:{fill:[255,235,238],text:[198,40,40]},Medium:{fill:[255,243,224],text:[230,81,0]},Low:{fill:[232,245,233],text:[46,125,50]}};
+const PDF_FRIC={A:{fill:[183,28,28],text:[255,255,255]},B:{fill:[230,74,25],text:[255,255,255]},C:{fill:[249,168,37],text:[123,63,0]},D:{fill:[200,230,201],text:[27,94,32]},E:{fill:[187,222,251],text:[13,71,161]},F:{fill:[243,229,245],text:[74,20,140]}};
+
+let allData=[],filtered=[],activeCats=new Set(),page=1,riskChart,fricChart,catChart;
+
+function normRisk(v){if(!v) return'Unknown';const s=v.trim().toLowerCase();if(s.includes('high')) return'High';if(s.includes('med')) return'Medium';if(s.includes('low')) return'Low';return v.trim();}
+
+Papa.parse(CSV_FILE,{download:true,header:true,skipEmptyLines:true,
+  complete(r){
+    allData=r.data.map(d=>({hs:String(d.HS_Code||'').trim(),sls:String(d.SLS_No||'').trim(),product:String(d.Product||'').trim(),category:String(d.Category||'').trim(),name:String(d.Name||'').trim(),risk:normRisk(d.Risk_Level),friction:String(d.Friction_Level||'').trim().toUpperCase()}));
+    activeCats=new Set(allData.map(d=>d.category));
+    document.getElementById('record-count').textContent=allData.length;
+    buildUI(); applyFilters();
+  },
+  error(){document.getElementById('loading-state').innerHTML='<div class="empty"><div class="empty-icon">⚠</div><div>Could not load <strong>MasterProductList_v3.csv</strong>.<br>Make sure it is in the same folder as index.html.</div></div>';}
+});
+
+function buildUI(){
+  const cats=[...new Set(allData.map(d=>d.category))].sort();
+  document.getElementById('layout').innerHTML=`
+  <div class="sidebar">
+    <div class="panel">
+      <div class="panel-title">Category</div>
+      ${cats.map(c=>{const cc=CAT_COLORS[c]||{dot:'#999'};return`<label class="cat-item"><input type="checkbox" class="cat-cb" value="${c}" checked onchange="onCatChange()"><span class="cat-dot" style="background:${cc.dot}"></span><span class="cat-label">${c}</span></label>`;}).join('')}
+    </div>
+    <div class="panel">
+      <div class="panel-title">Search Filters</div>
+      <div class="search-wrap"><label>SLS No.</label><input class="search-input" id="sls-input" placeholder="e.g. 734" oninput="onSearchChange()"></div>
+      <div class="search-wrap" style="margin-top:10px"><label>HS Code</label><input class="search-input" id="hs-input" placeholder="e.g. 853620" oninput="onSearchChange()"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Summary</div>
+      <div class="kpi-row">
+        <div class="kpi" style="--kpi-accent:#283593"><div class="kpi-label">SLS Permit Holders</div><div class="kpi-val" id="k-sls">—</div><div class="kpi-sub">certified</div></div>
+        <div class="kpi" style="--kpi-accent:#1B5E20"><div class="kpi-label">Reg. Manufacturers</div><div class="kpi-val" id="k-mfr">—</div><div class="kpi-sub">registered</div></div>
+        <div class="kpi" style="--kpi-accent:#0D47A1"><div class="kpi-label">Products with COC</div><div class="kpi-val" id="k-cov">—</div><div class="kpi-sub">with certificate</div></div>
+        <div class="kpi" style="--kpi-accent:#C62828"><div class="kpi-label">Not Covered IIS</div><div class="kpi-val" id="k-ncov">—</div><div class="kpi-sub">outside IIS scope</div></div>
+        <div class="kpi" style="--kpi-accent:#C62828;grid-column:1/-1"><div class="kpi-label">High Risk Items</div><div class="kpi-val" id="k-high">—</div><div class="kpi-sub">require attention</div></div>
+      </div>
+    </div>
+    <button class="reset-btn" onclick="resetAll()">Reset All Filters</button>
+    <button class="pdf-side-btn" onclick="generatePDF()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9,15 12,18 15,15"/></svg>
+      Download PDF Report
+    </button>
+  </div>
+
+  <div class="main-content">
+    <div class="legend-card">
+      <div class="legend-title">Friction Level Reference</div>
+      <div class="legend-grid">
+        ${Object.entries(FRICTION_LABELS).map(([k,v])=>`<div class="legend-item leg-${k.toLowerCase()}"><div class="legend-code">${k}</div><div class="legend-desc">${v}</div></div>`).join('')}
+      </div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-top"><div class="chart-name">Risk Level Distribution</div><div class="chart-sub">High / Medium / Low</div></div>
+        <div style="position:relative;height:180px"><canvas id="riskChart" role="img" aria-label="Risk distribution donut">Risk distribution.</canvas></div>
+        <div id="risk-legend" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:11px;color:var(--text2)"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-top"><div class="chart-name">Friction Level Distribution</div><div class="chart-sub">Levels A through E</div></div>
+        <div style="position:relative;height:180px"><canvas id="fricChart" role="img" aria-label="Friction distribution donut">Friction distribution.</canvas></div>
+        <div id="fric-legend" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:11px;color:var(--text2)"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-top"><div class="chart-name">Products by Category</div><div class="chart-sub">Total count per category</div></div>
+        <div style="position:relative;height:210px"><canvas id="catChart" role="img" aria-label="Category bar chart">Category counts.</canvas></div>
+      </div>
+    </div>
+    <div class="stats-bar" id="stats-bar"></div>
+    <div class="matrix-card">
+      <div class="matrix-header">
+        <div class="matrix-title">Product Details Matrix</div>
+        <div class="matrix-meta" id="matrix-meta">Loading…</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>SLS No.</th><th>HS Code</th><th>Product</th><th>Category</th><th>Name / Entity</th><th>Risk Level</th><th>Friction Level</th></tr></thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+      <div class="pagination"><div class="page-info" id="page-info"></div><div class="page-btns" id="page-btns"></div></div>
+    </div>
+  </div>`;
+  initCharts();
+}
+
+function applyFilters(){
+  const sls=document.getElementById('sls-input')?.value.trim().toLowerCase()||'';
+  const hs=document.getElementById('hs-input')?.value.trim().toLowerCase()||'';
+  filtered=allData.filter(d=>{
+    if(!activeCats.has(d.category)) return false;
+    if(sls&&!d.sls.toLowerCase().includes(sls)) return false;
+    if(hs&&!d.hs.toLowerCase().includes(hs)) return false;
+    return true;
+  });
+  page=1; updateKPIs(); updateCharts(); renderTable(); updateStatsBar();
+  document.getElementById('record-count').textContent=filtered.length+' / '+allData.length;
+}
+function onCatChange(){activeCats=new Set();document.querySelectorAll('.cat-cb:checked').forEach(cb=>activeCats.add(cb.value));applyFilters();}
+function onSearchChange(){applyFilters();}
+function resetAll(){document.querySelectorAll('.cat-cb').forEach(cb=>cb.checked=true);activeCats=new Set(allData.map(d=>d.category));document.getElementById('sls-input').value='';document.getElementById('hs-input').value='';applyFilters();}
+
+function updateKPIs(){
+  const f=filtered;
+  document.getElementById('k-sls').textContent=f.filter(d=>d.category==='Products from SLS Permit holders').length;
+  document.getElementById('k-mfr').textContent=f.filter(d=>d.category==='Products from Registered Manufacturers').length;
+  document.getElementById('k-cov').textContent=f.filter(d=>d.category==='Products with COC').length;
+  document.getElementById('k-ncov').textContent=f.filter(d=>d.category==='Products Not covered under IIS').length;
+  document.getElementById('k-high').textContent=f.filter(d=>d.risk==='High').length;
+}
+
+function updateStatsBar(){
+  const c={};filtered.forEach(d=>c[d.risk]=(c[d.risk]||0)+1);
+  const sb=document.getElementById('stats-bar');if(!sb) return;
+  sb.innerHTML=`<span style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Filtered:</span>${Object.entries(c).map(([k,v])=>`<span class="stat-item"><span class="stat-dot" style="background:${RISK_CHART_COLORS[k]||'#999'}"></span>${k}: <strong>${v}</strong></span>`).join('')}<span class="stat-item" style="margin-left:auto">Total: <strong>${filtered.length}</strong></span>`;
+}
+
+function initCharts(){
+  riskChart=new Chart(document.getElementById('riskChart'),{type:'doughnut',data:{labels:[],datasets:[{data:[],backgroundColor:[],borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false}},layout:{padding:5}}});
+  fricChart=new Chart(document.getElementById('fricChart'),{type:'doughnut',data:{labels:[],datasets:[{data:[],backgroundColor:[],borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false}},layout:{padding:5}}});
+  const cats=[...new Set(allData.map(d=>d.category))];
+  catChart=new Chart(document.getElementById('catChart'),{type:'bar',data:{labels:cats.map(c=>c.replace(' under Gazette','').replace(' Manufacturer','Mfr')),datasets:[{data:cats.map(()=>0),backgroundColor:cats.map(c=>(CAT_COLORS[c]||{dot:'#999'}).dot),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},color:'#718096'},grid:{color:'rgba(0,0,0,0.04)'}},y:{ticks:{font:{size:10},color:'#4A5568'}}}}});
+}
+
+function updateCharts(){
+  if(!riskChart) return;
+  const rc={};filtered.forEach(d=>rc[d.risk]=(rc[d.risk]||0)+1);
+  const rk=Object.keys(rc);
+  riskChart.data.labels=rk;riskChart.data.datasets[0].data=rk.map(k=>rc[k]);riskChart.data.datasets[0].backgroundColor=rk.map(k=>RISK_CHART_COLORS[k]||'#999');riskChart.update();
+  const rl=document.getElementById('risk-legend');
+  if(rl) rl.innerHTML=rk.map(k=>`<span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:2px;background:${RISK_CHART_COLORS[k]||'#999'};flex-shrink:0"></span>${k}: ${rc[k]}</span>`).join('');
+  const fc={};filtered.forEach(d=>fc[d.friction]=(fc[d.friction]||0)+1);
+  const fk=Object.keys(fc).sort();
+  fricChart.data.labels=fk;fricChart.data.datasets[0].data=fk.map(k=>fc[k]);fricChart.data.datasets[0].backgroundColor=fk.map(k=>FRIC_CHART_COLORS[k]||'#999');fricChart.update();
+  const fl=document.getElementById('fric-legend');
+  if(fl) fl.innerHTML=fk.map(k=>`<span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:2px;background:${FRIC_CHART_COLORS[k]||'#999'};flex-shrink:0"></span>${k}: ${fc[k]}</span>`).join('');
+  const cats=[...new Set(allData.map(d=>d.category))];
+  catChart.data.datasets[0].data=cats.map(c=>filtered.filter(d=>d.category===c).length);catChart.update();
+}
+
+function riskBadge(r){if(r==='High') return`<span class="risk risk-high">High</span>`;if(r==='Medium') return`<span class="risk risk-medium">Medium</span>`;if(r==='Low') return`<span class="risk risk-low">Low</span>`;return`<span class="risk">${r}</span>`;}
+function fricBadge(f){const cls=['A','B','C','D','E'].includes(f)?`fric-${f}`:'';return`<span class="fric ${cls}">${f}</span>`;}
+function catPill(c){const cc=CAT_COLORS[c];if(cc) return`<span class="cat-pill ${cc.pill}">${c}</span>`;return`<span class="cat-pill" style="background:#EEE;color:#555">${c}</span>`;}
+
+function renderTable(){
+  const total=filtered.length,start=(page-1)*PER_PAGE,end=Math.min(start+PER_PAGE,total),slice=filtered.slice(start,end);
+  const tbody=document.getElementById('table-body'),meta=document.getElementById('matrix-meta');
+  if(!tbody) return;
+  if(total===0){tbody.innerHTML=`<tr><td colspan="7"><div class="empty"><div class="empty-icon">🔍</div><div>No records match</div></div></td></tr>`;meta.textContent='0 records';}
+  else{tbody.innerHTML=slice.map(d=>`<tr><td class="sls-num">${d.sls||'—'}</td><td class="mono">${d.hs||'—'}</td><td>${d.product||'—'}</td><td>${catPill(d.category)}</td><td style="color:var(--text2)">${d.name&&d.name!=='nan'?d.name:'<span style="color:var(--text3)">N/A</span>'}</td><td>${riskBadge(d.risk)}</td><td>${fricBadge(d.friction)}</td></tr>`).join('');meta.textContent=`Showing ${start+1}–${end} of ${total}`;}
+  const pi=document.getElementById('page-info'),pb=document.getElementById('page-btns');
+  if(pi) pi.textContent=total===0?'No records':`${start+1}–${end} of ${total} records`;
+  renderPageBtns(total,pb);
+}
+function renderPageBtns(total,container){
+  if(!container) return;
+  const pages=Math.ceil(total/PER_PAGE);
+  let html=`<button class="pbtn" onclick="goPage(${page-1})" ${page===1?'disabled':''}>&#8592;</button>`;
+  const maxShow=5;let s=Math.max(1,page-Math.floor(maxShow/2)),e=Math.min(pages,s+maxShow-1);
+  if(e-s<maxShow-1) s=Math.max(1,e-maxShow+1);
+  if(s>1) html+=`<button class="pbtn" onclick="goPage(1)">1</button>${s>2?'<span style="padding:0 4px;color:var(--text3)">…</span>':''}`;
+  for(let i=s;i<=e;i++) html+=`<button class="pbtn ${i===page?'active':''}" onclick="goPage(${i})">${i}</button>`;
+  if(e<pages) html+=`${e<pages-1?'<span style="padding:0 4px;color:var(--text3)">…</span>':''}<button class="pbtn" onclick="goPage(${pages})">${pages}</button>`;
+  html+=`<button class="pbtn" onclick="goPage(${page+1})" ${page>=pages||pages===0?'disabled':''}>&#8594;</button>`;
+  container.innerHTML=html;
+}
+function goPage(p){const pages=Math.ceil(filtered.length/PER_PAGE);if(p<1||p>pages) return;page=p;renderTable();document.querySelector('.matrix-card')?.scrollIntoView({behavior:'smooth',block:'start'});}
+
+// ═══════════════════════════════════════════════════════════════
+//  PDF REPORT GENERATOR
+// ═══════════════════════════════════════════════════════════════
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function setProgress(pct,txt){document.getElementById('pdf-bar').style.width=pct+'%';document.getElementById('pdf-step').textContent=txt;}
+
+async function generatePDF(){
+  if(filtered.length===0){alert('No data to export. Please adjust your filters first.');return;}
+  document.getElementById('pdf-overlay').classList.add('show');
+  setProgress(5,'Initialising…');await sleep(60);
+
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210,M=14,CW=W-M*2;
+  let y=0;
+
+  // colours as rgb arrays
+  const NAVY=[13,43,78],NAVY2=[26,63,111],NAVY3=[36,86,164],WHITE=[255,255,255],GREY=[240,244,248],DGREY=[113,128,150],BLACK=[26,26,46];
+
+  function newPage(){doc.addPage();y=M;}
+  function chk(n=20){if(y+n>285) newPage();}
+
+  function secBar(title,col=NAVY2){
+    chk(12);
+    doc.setFillColor(...col);doc.rect(M,y,CW,8,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(...WHITE);
+    doc.text(title.toUpperCase(),M+3,y+5.5);
+    y+=11;doc.setTextColor(...BLACK);
+  }
+
+  // ── COVER ────────────────────────────────────────────────────
+  setProgress(10,'Building cover page…');await sleep(40);
+  doc.setFillColor(...NAVY);doc.rect(0,0,W,42,'F');
+  doc.setFillColor(...NAVY3);doc.rect(0,38,W,4,'F');
+  // logo box
+  doc.setFillColor(...WHITE);doc.roundedRect(M,8,20,20,2,2,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...NAVY);
+  doc.text('SLS',M+10,17,{align:'center'});doc.text('I',M+10,23,{align:'center'});
+  // titles
+  doc.setFont('helvetica','bold');doc.setFontSize(15);doc.setTextColor(...WHITE);doc.text('Quality Assurance Division — Friction Analysis Dashboard',M+24,17);
+  doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(180,200,220);doc.text('Sri Lanka Standards Institution (SLSI)  |  Import Inspection Scheme (CIIS)',M+24,24);
+  doc.setFontSize(8);doc.setTextColor(140,165,185);doc.text('Compulsory Import Inspection Scheme',M+24,31);
+  y=48;
+  // meta row
+  const now=new Date();
+  const dateStr=now.toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+  const timeStr=now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...DGREY);
+  doc.text(`Report generated: ${dateStr} at ${timeStr}`,M,y);
+  doc.text(`Total records: ${filtered.length}`,W-M,y,{align:'right'});y+=5;
+  // filters
+  const slsV=document.getElementById('sls-input')?.value.trim()||'';
+  const hsV=document.getElementById('hs-input')?.value.trim()||'';
+  const activeCatArr=[...activeCats];
+  const fd=[];
+  if(activeCatArr.length<6) fd.push('Categories: '+activeCatArr.join(', '));
+  if(slsV) fd.push('SLS No: '+slsV);
+  if(hsV)  fd.push('HS Code: '+hsV);
+  if(fd.length){doc.setFontSize(7.5);doc.text('Filters: '+fd.join('  |  '),M,y,{maxWidth:CW});y+=5;}
+  doc.setDrawColor(220,228,240);doc.setLineWidth(0.4);doc.line(M,y,W-M,y);y+=7;
+
+  // ── KPI CARDS ────────────────────────────────────────────────
+  setProgress(20,'Summary cards…');await sleep(40);
+  secBar('Summary Overview');
+  const kpis=[
+    {lbl:'TOTAL RECORDS',val:filtered.length,r:36,g:86,b:164},
+    {lbl:'SLS MARK HOLDERS',val:filtered.filter(d=>d.category==='Products from SLS Permit holders').length,r:40,g:83,b:147},
+    {lbl:'REG. MANUFACTURERS',val:filtered.filter(d=>d.category==='Products from Registered Manufacturers').length,r:27,g:94,b:32},
+    {lbl:'COVERED (GAZETTE)',val:filtered.filter(d=>d.category==='Products with COC').length,r:13,g:71,b:161},
+    {lbl:'NOT COVERED',val:filtered.filter(d=>d.category==='Products Not covered under IIS').length,r:198,g:40,b:40},
+    {lbl:'HIGH RISK ITEMS',val:filtered.filter(d=>d.risk==='High').length,r:198,g:40,b:40},
+  ];
+  const kw=(CW-5)/3,kg=2.5;
+  kpis.forEach((k,i)=>{
+    const col=i%3,row=Math.floor(i/3);
+    if(col===0&&row>0) y+=19;
+    const x=M+col*(kw+kg);
+    doc.setFillColor(245,248,252);doc.rect(x,y,kw,16,'F');
+    doc.setFillColor(k.r,k.g,k.b);doc.rect(x,y,kw,2.5,'F');
+    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(...DGREY);doc.text(k.lbl,x+kw/2,y+7,{align:'center'});
+    doc.setFont('helvetica','bold');doc.setFontSize(15);doc.setTextColor(k.r,k.g,k.b);doc.text(String(k.val),x+kw/2,y+14,{align:'center'});
+  });
+  y+=19;
+
+  // ── RISK TABLE ────────────────────────────────────────────────
+  setProgress(32,'Risk breakdown…');await sleep(40);
+  chk(40);secBar('Risk Level Breakdown');
+  const rc={};filtered.forEach(d=>rc[d.risk]=(rc[d.risk]||0)+1);
+  doc.autoTable({startY:y,margin:{left:M,right:M},
+    head:[['Risk Level','Record Count','% of Total']],
+    body:Object.entries(rc).map(([k,v])=>[k,v,Math.round(v/filtered.length*100)+'%']),
+    styles:{fontSize:9,cellPadding:3},headStyles:{fillColor:NAVY2,textColor:WHITE,fontStyle:'bold',fontSize:8},
+    columnStyles:{0:{cellWidth:80},1:{cellWidth:50,halign:'center'},2:{cellWidth:32,halign:'center'}},
+    didDrawCell(d){if(d.section==='body'&&d.column.index===0){const c=PDF_RISK[d.cell.raw];if(c){doc.setFillColor(...c.fill);doc.rect(d.cell.x+2,d.cell.y+1.5,d.cell.width-4,d.cell.height-3,'F');doc.setTextColor(...c.text);doc.setFontSize(8);doc.setFont('helvetica','bold');doc.text(d.cell.raw,d.cell.x+d.cell.width/2,d.cell.y+d.cell.height/2+1,{align:'center'});}}},
+    didParseCell(d){if(d.section==='body'&&d.column.index===0) d.cell.text=[];}
+  });
+  y=doc.lastAutoTable.finalY+7;
+
+  // ── FRICTION TABLE ────────────────────────────────────────────
+  setProgress(43,'Friction breakdown…');await sleep(40);
+  chk(50);secBar('Friction Level Breakdown');
+  const fc={};filtered.forEach(d=>fc[d.friction]=(fc[d.friction]||0)+1);
+  doc.autoTable({startY:y,margin:{left:M,right:M},
+    head:[['Level','Description','Count','%']],
+    body:Object.entries(fc).sort().map(([k,v])=>[k,FRICTION_LABELS[k]||k,v,Math.round(v/filtered.length*100)+'%']),
+    styles:{fontSize:8,cellPadding:3},headStyles:{fillColor:NAVY2,textColor:WHITE,fontStyle:'bold',fontSize:8},
+    columnStyles:{0:{cellWidth:14,halign:'center'},1:{cellWidth:112},2:{cellWidth:18,halign:'center'},3:{cellWidth:18,halign:'center'}},
+    didDrawCell(d){if(d.section==='body'&&d.column.index===0){const c=PDF_FRIC[d.cell.raw];if(c){doc.setFillColor(...c.fill);doc.rect(d.cell.x+0.5,d.cell.y+0.5,d.cell.width-1,d.cell.height-1,'F');doc.setTextColor(...c.text);doc.setFontSize(9);doc.setFont('helvetica','bold');doc.text(d.cell.raw,d.cell.x+d.cell.width/2,d.cell.y+d.cell.height/2+1,{align:'center'});}}},
+    didParseCell(d){if(d.section==='body'&&d.column.index===0) d.cell.text=[];}
+  });
+  y=doc.lastAutoTable.finalY+7;
+
+  // ── CATEGORY TABLE ────────────────────────────────────────────
+  setProgress(52,'Category breakdown…');await sleep(40);
+  chk(50);secBar('Category Breakdown');
+  const cc={};filtered.forEach(d=>cc[d.category]=(cc[d.category]||0)+1);
+  doc.autoTable({startY:y,margin:{left:M,right:M},
+    head:[['Category','Count','% of Total']],
+    body:Object.entries(cc).sort((a,b)=>b[1]-a[1]).map(([k,v])=>[k,v,Math.round(v/filtered.length*100)+'%']),
+    styles:{fontSize:9,cellPadding:3},headStyles:{fillColor:NAVY2,textColor:WHITE,fontStyle:'bold',fontSize:8},
+    columnStyles:{0:{cellWidth:120},1:{cellWidth:26,halign:'center'},2:{cellWidth:26,halign:'center'}},
+    alternateRowStyles:{fillColor:[245,248,252]},
+  });
+  y=doc.lastAutoTable.finalY+7;
+
+  // ── CHARTS ────────────────────────────────────────────────────
+  setProgress(62,'Capturing charts…');await sleep(180);
+  try{
+    chk(70);secBar('Visual Analysis');
+    const rImg=document.getElementById('riskChart').toDataURL('image/png',0.95);
+    const fImg=document.getElementById('fricChart').toDataURL('image/png',0.95);
+    const cImg=document.getElementById('catChart').toDataURL('image/png',0.95);
+    const cw2=(CW-4)/3;
+    doc.addImage(rImg,'PNG',M,y,cw2,46);
+    doc.addImage(fImg,'PNG',M+cw2+2,y,cw2,46);
+    doc.addImage(cImg,'PNG',M+2*(cw2+2),y,cw2,46);
+    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...DGREY);
+    doc.text('Risk Level Distribution',M+cw2/2,y+48,{align:'center'});
+    doc.text('Friction Level Distribution',M+cw2+2+cw2/2,y+48,{align:'center'});
+    doc.text('Products by Category',M+2*(cw2+2)+cw2/2,y+48,{align:'center'});
+    y+=52;
+  }catch(e){console.warn('Chart capture failed',e);y+=4;}
+
+  // ── PRODUCT TABLE ─────────────────────────────────────────────
+  setProgress(72,'Writing product details…');await sleep(60);
+  newPage();
+  secBar(`Product Details Matrix  —  All ${filtered.length} Records`);
+
+  doc.autoTable({
+    startY:y,margin:{left:M,right:M},
+    head:[['SLS No.','HS Code','Product','Category','Name / Entity','Risk','Friction']],
+    body:filtered.map(d=>[d.sls||'—',d.hs||'—',d.product||'—',d.category,(d.name&&d.name!=='nan')?d.name:'N/A',d.risk,d.friction]),
+    styles:{fontSize:7.5,cellPadding:2.5,overflow:'linebreak'},
+    headStyles:{fillColor:NAVY2,textColor:WHITE,fontStyle:'bold',fontSize:7.5,cellPadding:3},
+    columnStyles:{0:{cellWidth:13,halign:'center'},1:{cellWidth:18,halign:'center'},2:{cellWidth:36},3:{cellWidth:38},4:{cellWidth:34},5:{cellWidth:16,halign:'center'},6:{cellWidth:12,halign:'center'}},
+    alternateRowStyles:{fillColor:[248,250,252]},
+    didDrawCell(d){
+      if(d.section==='body'){
+        if(d.column.index===5){const c=PDF_RISK[d.cell.raw];if(c){doc.setFillColor(...c.fill);doc.roundedRect(d.cell.x+0.8,d.cell.y+0.8,d.cell.width-1.6,d.cell.height-1.6,1,1,'F');doc.setTextColor(...c.text);doc.setFontSize(7);doc.setFont('helvetica','bold');doc.text(d.cell.raw,d.cell.x+d.cell.width/2,d.cell.y+d.cell.height/2+0.8,{align:'center'});}}
+        if(d.column.index===6){const c=PDF_FRIC[d.cell.raw];if(c){doc.setFillColor(...c.fill);doc.roundedRect(d.cell.x+0.8,d.cell.y+0.8,d.cell.width-1.6,d.cell.height-1.6,1,1,'F');doc.setTextColor(...c.text);doc.setFontSize(8);doc.setFont('helvetica','bold');doc.text(d.cell.raw,d.cell.x+d.cell.width/2,d.cell.y+d.cell.height/2+0.8,{align:'center'});}}
+      }
+    },
+    didParseCell(d){if(d.section==='body'&&(d.column.index===5||d.column.index===6)) d.cell.text=[];},
+    didDrawPage(){
+      doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...DGREY);
+      doc.text('SLSI QA Division — Friction Analysis Dashboard',M,290);
+      doc.text(dateStr,W/2,290,{align:'center'});
+      doc.text(`Page ${doc.internal.getCurrentPageInfo().pageNumber}`,W-M,290,{align:'right'});
+    }
+  });
+
+  setProgress(92,'Finalising…');await sleep(60);
+
+  // Footer on all pages
+  const total=doc.internal.getNumberOfPages();
+  for(let i=1;i<=total;i++){
+    doc.setPage(i);
+    doc.setFillColor(...NAVY);doc.rect(0,287,W,10,'F');
+    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(160,185,210);
+    doc.text('Sri Lanka Standards Institution (SLSI) — Quality Assurance Division — CIIS Friction Analysis Dashboard',M,292.5);
+    doc.text(`Page ${i} of ${total}`,W-M,292.5,{align:'right'});
+  }
+
+  setProgress(99,'Saving…');await sleep(60);
+  const fn=`SLSI_Friction_Report_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.pdf`;
+  doc.save(fn);
+  setProgress(100,'Done!');
+  await sleep(700);
+  document.getElementById('pdf-overlay').classList.remove('show');
+}
+</script>
+
+<!-- TOAST NOTIFICATION -->
+<div id="pdf-toast" style="position:fixed;bottom:24px;right:24px;background:#0D2B4E;color:#fff;border-radius:10px;padding:13px 18px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,0.35);z-index:9999;transform:translateY(80px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1)">
+  <div id="toast-spinner" style="width:15px;height:15px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0"></div>
+  <span id="toast-msg">Generating PDF…</span>
+</div>
+
+</body>
+</html>

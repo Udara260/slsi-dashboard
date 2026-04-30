@@ -1,0 +1,38 @@
+HS_Code,SLS_No,Product,Category,Name,Risk_Level,Friction_Level
+85366921,734,13A Switch,Products with COC,,High,A
+85041010,1150,Ballasts for Flurescent,Products with COC,,High,B
+853620,1175,MCB,Products with COC,,Medium,C
+853620,1099,RCCB,Products with COC,,Medium,C
+853620,1022,RCBO,Products with COC,,Medium,C
+74081100,695,Conductor,Products with COC,,Medium,C
+85366190,138,Lamps,Products with COC,,Medium,C
+85366191,1571,Lamp holders,Products with COC,,Medium,C
+84145100,814,Fans,Products with COC,,Medium,C
+85161000,1193,Water heaters,Products with COC,,Medium,C
+851640,1476,Iron,Products with COC,,Medium,C
+85166010,1501,Kettles,Products with COC,,Medium,C
+85166090,1495,Hot plates,Products with COC,,Medium,C
+85167920,1501,Rice Cookers,Products with COC,,Medium,C
+85366921,734,13Y Switch,Products Not covered under IIS,,Low,D
+85041010,1150,Mercury bulb,Products Not covered under IIS,,Low,D
+853620,1175,MCCB,Products Not covered under IIS,,Low,D
+85366921,734,13A Switch,Products from Registered Manufacturers,AA Pvt Ltd,Low,D
+85041010,1150,Ballasts for Flurescent,Products from Registered Manufacturers,BB Pvt Ltd,Low,D
+853620,1175,MCB,Products from Registered Manufacturers,CC Pvt Ltd,Low,D
+853620,1099,RCCB,Products from Registered Manufacturers,DD Pvt Ltd,Low,D
+851640,1476,Iron,Products from SLS Permit holders,Demo Pvt Ltd,Low,D
+85166010,1501,Kettles,Products from SLS Permit holders,Damro Pvt Ltd,Low,D
+85166090,1495,Hot plates,Products from SLS Permit holders,Panasonic Sri Lanka,Low,D
+85167920,1501,Rice Cookers,Products from SLS Permit holders,Abans,Low,D
+853620,1099,RCCB,Products for Projects,BOI,Low,E
+853620,1022,RCBO,Products for Projects,Water Board,Low,D
+853620,1099,RCCB,Products with satisfactory past performance,FF,Medium,C
+853620,1022,RCBO,Products with satisfactory past performance,GG,Medium,C
+74081100,695,Conductor,Products with satisfactory past performance,HH,Medium,C
+85366190,138,Lamps,Products with satisfactory past performance,II,Medium,C
+85366921,734,13A Switch,Products with TIEP / value added and export oriented,EE Exporters Pvt Ltd,Low,F
+85041010,1150,Ballasts for Fluorescent,Products with TIEP / value added and export oriented,FF Manufacturing,Low,F
+853620,1175,MCB (No COC),Products without a COC,Unknown Importer,High,A
+85366921,734,Switch (No COC),Products without a COC,Unknown Importer,High,A
+85167920,1501,Rice Cookers,Products from SLS Permit holders,Abans,Low,F
+85166190,138,LED Lamp,Products from Registered Manufacturers,CC Pvt Ltd,Low,F
